@@ -1,6 +1,6 @@
 VERSION = 4
 PATCHLEVEL = 9
-SUBLEVEL = 248
+SUBLEVEL = 255
 EXTRAVERSION =
 NAME = Roaring Lionus
 
@@ -354,7 +354,7 @@ MKDTIMG		= mkdtimg
 AWK		= awk
 GENKSYMS	= scripts/genksyms/genksyms
 INSTALLKERNEL  := installkernel
-DEPMOD		= /sbin/depmod
+DEPMOD		= depmod
 PERL		= perl
 PYTHON		= python
 CHECK		= sparse
