@@ -15,6 +15,7 @@
 #include "sde_hw_color_proc_common_v4.h"
 #include "sde_hw_color_proc_v4.h"
 
+static unsigned short kcal_enable = 0;
 static unsigned short kcal_red = 256;
 static unsigned short kcal_green = 256;
 static unsigned short kcal_blue = 256;
@@ -23,6 +24,7 @@ static unsigned short kcal_sat = 255;
 static unsigned short kcal_val = 255;
 static unsigned short kcal_cont = 255;
 
+module_param(kcal_enable, short, 0644);
 module_param(kcal_red, short, 0644);
 module_param(kcal_green, short, 0644);
 module_param(kcal_blue, short, 0644);
@@ -256,6 +258,8 @@ void sde_setup_dspp_pccv4(struct sde_hw_dspp *ctx, void *cfg)
 
 		SDE_REG_WRITE(&ctx->hw, base + PCC_C_OFF, coeffs->c);
 
+		// Enable?
+		if (!kcal_enable) {
 		// RED
 		SDE_REG_WRITE(&ctx->hw, base + PCC_R_OFF,
 			i == 0 ? (coeffs->r * kcal_red) / 256 : coeffs->r);
@@ -265,7 +269,11 @@ void sde_setup_dspp_pccv4(struct sde_hw_dspp *ctx, void *cfg)
 		// BLUE
 		SDE_REG_WRITE(&ctx->hw, base + PCC_B_OFF,
 			i == 2 ? (coeffs->b * kcal_blue) / 256 : coeffs->b);
-
+		} else {
+		SDE_REG_WRITE(&ctx->hw, base + PCC_R_OFF, coeffs->r);
+		SDE_REG_WRITE(&ctx->hw, base + PCC_G_OFF, coeffs->g);
+		SDE_REG_WRITE(&ctx->hw, base + PCC_B_OFF, coeffs->b);
+		}
 		SDE_REG_WRITE(&ctx->hw, base + PCC_RG_OFF, coeffs->rg);
 		SDE_REG_WRITE(&ctx->hw, base + PCC_RB_OFF, coeffs->rb);
 		SDE_REG_WRITE(&ctx->hw, base + PCC_GB_OFF, coeffs->gb);
@@ -274,6 +282,8 @@ void sde_setup_dspp_pccv4(struct sde_hw_dspp *ctx, void *cfg)
 
 	opcode = SDE_REG_READ(&ctx->hw, ctx->cap->sblk->hsic.base);
 
+	// Enable?
+	if (!kcal_enable) {
 	// HUE
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->hsic.base + PA_HUE_OFF,
 		kcal_hue & PA_HUE_MASK);
@@ -296,6 +306,6 @@ void sde_setup_dspp_pccv4(struct sde_hw_dspp *ctx, void *cfg)
 
 	opcode |= (local_opcode | PA_EN);
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->hsic.base, opcode);
-
+	}
 	SDE_REG_WRITE(&ctx->hw, ctx->cap->sblk->pcc.base, PCC_EN);
 }
