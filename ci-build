@@ -1,0 +1,94 @@
+#!/bin/bash
+clang_path="${HOME}/cbl/bin/clang"
+gcc_path="${HOME}/cbl/bin/aarch64-linux-gnu-"
+gcc_32_path="${HOME}/cbl/bin/arm-linux-gnueabi-"
+
+NAME=RSKernel
+version=Snapshot
+START=$(date +"%s")
+source=`pwd`
+date="`date +"%m%d-%H%M"`"
+
+print (){
+case ${2} in
+	"red")
+	echo -e "\033[31m $1 \033[0m";;
+
+	"blue")
+	echo -e "\033[34m $1 \033[0m";;
+
+	"yellow")
+	echo -e "\033[33m $1 \033[0m";;
+
+	"purple")
+	echo -e "\033[35m $1 \033[0m";;
+
+	"sky")
+	echo -e "\033[36m $1 \033[0m";;
+
+	"green")
+	echo -e "\033[32m $1 \033[0m";;
+
+	*)
+	echo $1
+	;;
+	esac
+}
+
+args="CC=$clang_path \
+	CROSS_COMPILE=$gcc_path \
+	CROSS_COMPILE_ARM32=$gcc_32_path \
+	-j$(nproc --all) "
+
+clean(){
+	rm -rf out
+}
+
+export KBUILD_BUILD_USER="Incubator"
+export KBUILD_BUILD_HOST="Ratoriku"
+
+build(){
+	print "Start building b1c1..." blue
+	make $args b1c1_defconfig && make $args
+	if [ $? -ne 0 ]; then
+	errored "Error while building for b1c1!"
+	else
+	export zipname="$NAME-$version-b1c1-$date.zip"
+	mkzip
+	fi
+}
+
+function telegram_notify(){
+	curl -s https://api.telegram.org/bot"${bot_token}"/sendMessage -d parse_mode="Markdown" -d text="${1}" -d chat_id="${chat_id}"
+}
+
+function errored(){
+	telegram_notify "${1}"
+	exit 1
+}
+
+function telegram_upload(){
+	curl -s https://api.telegram.org/bot"${bot_token}"/sendDocument -F document=@"${1}" -F chat_id="${chat_id}"
+}
+
+mkzip(){
+	cp -f out/arch/arm64/boot/Image.lz4-dtb ${HOME}/AnyKernel3
+	cd ${HOME}/AnyKernel3
+	make
+	mv -f *.zip ${HOME}/$zipname
+	cd ${HOME}
+	telegram_upload ${zipname}
+	cd $source
+	print "Done! Check your $zipname" green
+}
+
+	telegram_notify "Start building 
+	Version: $NAME-$version
+	Date: $date "
+	START=$(date +"%s")
+
+	build
+
+	END=$(date +"%s")
+	KDURTION=$((END - START))
+	telegram_notify "Done! Cost time $((KDURTION / 60)) min $((KDURTION % 60)) s"
