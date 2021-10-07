@@ -1,1 +1,10 @@
-BUILD_CONFIG=private/msm-google/build.config.bluecross_no-cfi build/build.sh "$@"
+#!/bin/bash
+args="-j$(nproc --all) \
+	O=out \
+	ARCH=arm64 \
+	CLANG_TRIPLE=aarch64-linux-gnu- \
+	CROSS_COMPILE=${HOME}/cbl/bin/aarch64-linux-gnu- \
+	CC=${HOME}/cbl/bin/clang \
+	CROSS_COMPILE_ARM32=${HOME}/cbl/bin/arm-linux-gnueabi- "
+	make ${args} b1c1_defconfig
+	make ${args}
