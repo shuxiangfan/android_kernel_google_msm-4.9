@@ -1,0 +1,43 @@
+name: Build on Tag
+
+on:
+  push:
+    branches: [ twrp-11.0 ]
+  pull_request:
+    branches: [ twrp-11.0 ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout kernel source
+      uses: actions/checkout@v2
+
+    - name: Clean Up
+      run: |
+        sudo rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/sudo apt/sources.list.d
+        sudo apt -y purge azure-cli ghc* zulu* hhvm llvm* firefox google* dotnet* powershell openjdk* mysql* php*
+        sudo apt update
+        sudo apt -y autoremove --purge
+        sudo apt clean
+        sudo dd if=/dev/zero of=/swapfile bs=1G count=20 status=progress
+        sudo chmod 600 /swapfile
+        sudo mkswap /swapfile
+        sudo swapon /swapfile
+
+    - name: Android kernel build
+      uses: shuxiangfan/android-kernel-actions@master
+      id: build
+      env:
+        NAME: ReallyShow's magic building system
+      with:
+        arch: arm64
+        compiler: proton-clang/master/binutils
+        defconfig: b1c1_defconfig
+        image: Image.lz4-dtb
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.4
+      with:
+        path: ${{ steps.build.outputs.outfile }}
